@@ -1,0 +1,42 @@
+xom_web_services.release:
+  path: /admin/sparkle/release
+  defaults:
+    _title: 'Release Manager'
+    _form: 'Drupal\xom_web_services\Form\SparkleForm'
+  requirements:
+    _permission: 'administer app releases'
+xom_web_services.gate_check:
+  path: /xivmac/gatecheck
+  defaults:
+    _controller: 'Drupal\xom_web_services\Controller\GateCheckController::checkGate'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'
+xom_web_services.login_check:
+  path: /xivmac/logincheck
+  defaults:
+    _controller: 'Drupal\xom_web_services\Controller\GateCheckController::checkLogin'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'
+xom_web_services.dalamud_check:
+  path: /xivmac/dalamudcheck
+  defaults:
+    _controller: 'Drupal\xom_web_services\Controller\GateCheckController::checkDalamud'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'
+xom_web_services.iinact_plugin:
+  path: /iinact/plugin/latest
+  defaults:
+    _controller: 'Drupal\xom_web_services\IINACT\IINACTUpdateEndpoint::serve'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'
+xom_web_services.iinact_plugin_url:
+  path: /iinact/plugin/latest/download
+  defaults:
+    _controller: 'Drupal\xom_web_services\IINACT\IINACTUpdateEndpoint::serveDownload'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'

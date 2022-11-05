@@ -1,0 +1,6 @@
+name: Sparkle Integration
+type: module
+description: Provides sparkle update functionality.
+package: xom_web_services
+core: 8.x
+core_version_requirement: ^8 || ^9

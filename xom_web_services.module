@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_rebuild().
+ */
+function xom_web_services_rebuild() {
+  \Drupal::service('xom_web_services.iinact_update_manager')->pluginGetLatest();
+}

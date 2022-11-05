@@ -1,0 +1,29 @@
+services:
+  xom_web_services.social_announcement:
+    class: Drupal\xom_web_services\SocialAnnouncement
+    arguments: ['@xom_web_services.discord_helper', '@xom_web_services.feed_helper', '@xom_web_services.appcast_helper']
+  xom_web_services.discord_helper:
+    class: Drupal\xom_web_services\Socials\DiscordHelper
+    arguments: ['@http_client']
+  xom_web_services.feed_helper:
+    class: Drupal\xom_web_services\Socials\FeedHelper
+    arguments: []
+  xom_web_services.appcast_helper:
+    class: Drupal\xom_web_services\Socials\AppcastHelper
+    arguments: []
+  xom_web_services.se_update_scanner:
+    class: Drupal\xom_web_services\Socials\SEUpdateScanner
+    arguments: ['@http_client']
+  xom_web_services.commands:
+    class: \Drupal\xom_web_services\Commands\TestCommands
+    tags:
+      - { name: drush.command }
+    arguments: []
+  xom_web_services.iinact_commands:
+    class: \Drupal\xom_web_services\IINACT\IINACTCommands
+    tags:
+      - { name: drush.command }
+    arguments: []
+  xom_web_services.iinact_update_manager:
+    class: Drupal\xom_web_services\IINACT\IINACTUpdateManager
+    arguments: ['@cache.default', '@http_client']

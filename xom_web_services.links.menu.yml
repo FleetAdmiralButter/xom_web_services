@@ -1,0 +1,6 @@
+xom_web_services.release:
+  title: 'Release Manager'
+  description: 'Create Sparkle update release'
+  parent: system.admin_content
+  route_name: xom_web_services.release
+  weight: 30
