@@ -48,12 +48,11 @@ class DiscordHelper {
 
     public function templateMessage($version, $description) {
         return <<<EOT
-        :star: LATEST RELEASE:  Delta Changelog: $version Beta
+        :star: Latest Release:  XIV on Mac $version Beta
 
         Changelog:
         $description
         ---
-        Deltas updates will be come through the application.
         EOT;
     }
 

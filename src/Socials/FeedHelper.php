@@ -2,10 +2,8 @@
 
 namespace Drupal\xom_web_services\Socials;
 
-use Drupal\Core\Site\Settings;
-use Drupal\Component\Serialization\Json;
-use Symfony\Component\Serializer\Encoder;
-use GuzzleHttp\Client;
+use Drupal\block_content\Entity\BlockContent;
+use Drupal\paragraphs\Entity\Paragraph;
 
 
 class FeedHelper {
@@ -15,11 +13,14 @@ class FeedHelper {
     }
 
     public function updateFeed($message) {
-        $homepage = \Drupal::entityTypeManager()->getStorage('node')->load(1);
-        $feed = $homepage->get('body')[0]->value;
-        $feed = $message . $feed;
-        $homepage->set('body', ['value' => $feed, 'format' => 'markdown']);
-        $homepage->save();
+      $bid = 15;
+      $block = BlockContent::load($bid);
+      $pid = $block->get('field_c_b_components')->getValue();
+      $paragraph = Paragraph::load($pid[0]['target_id']);
+      $feed = $paragraph->get('field_c_p_content')->getValue()[0]['value'];
+      $body = $message . $feed;
+      $paragraph->set('field_c_p_content', ['value' => $body, 'format'=> 'basic_html']);
+      $paragraph->save();
     }
 
     public function templateChangelogEntries($changelogEntries) {
@@ -32,16 +33,13 @@ class FeedHelper {
 
     public function templateMessage($version, $description, $date) {
         return <<<EOT
-        \r\n
         <strong>$date:</strong><br><br>
-        <b>Delta updates</b> <i>(Updated through application)</i><br><br>
 
-        Delta Changelog: $version Beta
+        XIV on Mac $version Beta<br>
 
         $description
 
-        ---
-        \r\n
+        --- <br>
         EOT;
     }
 }
