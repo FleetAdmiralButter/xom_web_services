@@ -33,7 +33,12 @@ class IINACTUpdateManager {
     }
 
     private function updateCachedPluginVersion($version, $url) {
-      $old_version = $this->cache->get('iinact_plugin_latest', FALSE)->data;
+      $old_version = $this->cache->get('iinact_plugin_latest', FALSE);
+      if (empty($old_version)) {
+        $old_version = '';
+      } else {
+        $old_version = $old_version->data;
+      }
       if ($old_version != $version) {
         Cache::invalidateTags(['iinact_plugin_latest']);
         $this->cache->set('iinact_plugin_latest_url', $url, CacheBackendInterface::CACHE_PERMANENT, ['iinact_plugin_latest']);
