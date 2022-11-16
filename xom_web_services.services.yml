@@ -26,4 +26,4 @@ services:
     arguments: []
   xom_web_services.iinact_update_manager:
     class: Drupal\xom_web_services\IINACT\IINACTUpdateManager
-    arguments: ['@cache.default', '@http_client']
+    arguments: ['@state', '@http_client']
