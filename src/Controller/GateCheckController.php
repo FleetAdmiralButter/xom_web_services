@@ -45,7 +45,7 @@ class GateCheckController extends ControllerBase {
   public function checkDalamud() {
     try {
       $gql = '{"query":"query GetLatestGameVersion {  repository(slug:\"4e9a232b\") {    latestVersion {      versionString    }  }}"}';
-      $thaliak_response = $this->http_client->request('POST', 'https://thaliak.xiv.dev/graphql/', [
+      $thaliak_response = $this->http_client->request('POST', 'https://thaliak.xiv.dev/graphql/2022-08-14', [
         'body' => $gql,
         'headers' => [
           'Content-Type' => 'application/json',
