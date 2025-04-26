@@ -3,7 +3,9 @@
 namespace Drupal\xom_web_services\IINACT;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Archiver\Zip;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\State\StateInterface;
 use GuzzleHttp\Client;
@@ -29,9 +31,7 @@ class IINACTUpdateManager {
         $latest_plugin_ver = Xss::filter($latest_plugin_ver);
         $url = $response['assets'][0]['browser_download_url'];
         $this->updateCachedPluginVersion($latest_plugin_ver, $url);
-        \Drupal::logger('xom_web_services')->debug('IINACT: Cache sync complete.');
       } catch (\Exception $e) {
-        \Drupal::logger('xom_web_services')->error('IINACT Plugin refresh failed, serving stale content.');
         \Drupal::logger('xom_web_services')->error($e->getMessage());
       }
     }
@@ -39,12 +39,52 @@ class IINACTUpdateManager {
     private function updateCachedPluginVersion($version, $url) {
       $old_version = $this->state->get('xom_web_services.iinact_plugin_latest', '0.0.0.0');
       if ($old_version != $version) {
+        // Initialise and download the ZIP.
+        $fs_driver = \Drupal::service('file_system');
+        $staging_directory = 'private://iinact';
+        $public_directory = 'public://update_data/IINACT';
+        $fs_driver->prepareDirectory($staging_directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+        $downloadedZip = $fs_driver->realpath($staging_directory) . '/FFXIV_ACT_Plugin.zip';
+        $this->http_client->get($url, [
+          'sink' => $downloadedZip,
+        ]);
+
+        // Extract the DLL from the downloaded archive.
+        $zip = new \ZipArchive();
+        if ($zip->open($downloadedZip) !== TRUE) {
+          unlink($downloadedZip);
+          throw new \Exception('Could not open ZIP file.');
+        }
+        if ($zip->extractTo($staging_directory, 'FFXIV_ACT_Plugin.dll') !== TRUE) {
+          unlink($downloadedZip);
+          throw new \Exception('Could not extract DLL from ZIP file.');
+        }
+        unlink($downloadedZip);
+
+        // Create a new ZIP file containing only the plugin DLL.
+        $dllPath = $fs_driver->realpath($staging_directory) . '/FFXIV_ACT_Plugin.dll';
+        $zip = new \ZipArchive();
+        $finalZipName = sprintf('FFXIV_ACT_Plugin_%s.zip', $version);
+        $finalZipPath = $fs_driver->realpath($staging_directory) . '/' . $finalZipName;
+        $zip->open($finalZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFile($dllPath, 'FFXIV_ACT_Plugin.dll' );;
+        $zip->close();
+        unlink($dllPath);
+
+        // Copy the file to the SU service.
+        $fs_driver->prepareDirectory($public_directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+        copy($finalZipPath, 'public://update_data/IINACT/' . $finalZipName);
+        unlink($finalZipPath);
+
+        $finalZipUrl = 'https://softwareupdate.xivmac.com/sites/default/files/update_data/IINACT/' . $finalZipName;
+
         $this->state->set('xom_web_services.iinact_plugin_latest', $version);
-        $this->state->set('xom_web_services.iinact_plugin_download', $url);
+        $this->state->set('xom_web_services.iinact_plugin_download', $finalZipUrl);
         Cache::invalidateTags(['iinact_plugin_latest']);
-        $this->postDiscordMessage($version, $url);
+        $this->postDiscordMessage($version, $finalZipUrl);
+        \Drupal::logger('xom_web_services')->notice('IINACT: Cache sync complete.');
       } else {
-        \Drupal::logger('xom_web_services')->debug('IINACT: Cache sync skipped.');
+        \Drupal::logger('xom_web_services')->notice('IINACT: Cache sync skipped.');
       }
     }
 
@@ -70,10 +110,8 @@ class IINACTUpdateManager {
 
     private function templateMessage($version, $url) {
       return <<<EOT
-      Found new FFXIV_ACT_Plugin release!
-      
-      Propagating to caches, allow +/- 5 minutes.
-      
+      Found and repacked a new FFXIV_ACT_Plugin release.
+
       Version: $version
       Download URL: $url
       EOT;
