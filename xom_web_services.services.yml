@@ -14,16 +14,6 @@ services:
   xom_web_services.se_update_scanner:
     class: Drupal\xom_web_services\Socials\SEUpdateScanner
     arguments: ['@http_client']
-  xom_web_services.commands:
-    class: \Drupal\xom_web_services\Commands\TestCommands
-    tags:
-      - { name: drush.command }
-    arguments: []
-  xom_web_services.iinact_commands:
-    class: \Drupal\xom_web_services\IINACT\IINACTCommands
-    tags:
-      - { name: drush.command }
-    arguments: []
   xom_web_services.iinact_update_manager:
     class: Drupal\xom_web_services\IINACT\IINACTUpdateManager
     arguments: ['@state', '@http_client']
