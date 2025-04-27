@@ -2,14 +2,16 @@
 
 namespace Drupal\xom_web_services\IINACT;
 
+use Aws\CloudFront\CloudFrontClient;
+use Aws\Exception\AwsException;
 use Drupal\Component\Serialization\Json;
-use Drupal\Core\Archiver\Zip;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\State\StateInterface;
 use GuzzleHttp\Client;
 use Drupal\Component\Utility\Xss;
+use Ramsey\Uuid\Uuid;
 
 class IINACTUpdateManager {
 
@@ -80,7 +82,11 @@ class IINACTUpdateManager {
 
         $this->state->set('xom_web_services.iinact_plugin_latest', $version);
         $this->state->set('xom_web_services.iinact_plugin_download', $finalZipUrl);
+
+        // Clear all application and CDN caches.
         Cache::invalidateTags(['iinact_plugin_latest']);
+        \Drupal::service('xom_web_services.external_service')->invalidateCdnCache(Settings::get('xom_web_services.iinact_updater_dist_id'), '/updater/*');
+
         $this->postDiscordMessage($version, $finalZipUrl);
         \Drupal::logger('xom_web_services')->notice('IINACT: Cache sync complete.');
       } else {
@@ -115,7 +121,5 @@ class IINACTUpdateManager {
       Version: $version
       Download URL: $url
       EOT;
-  }
-
-
+    }
 }

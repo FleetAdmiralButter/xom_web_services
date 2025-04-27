@@ -1,6 +1,6 @@
 services:
-  xom_web_services.social_announcement:
-    class: Drupal\xom_web_services\SocialAnnouncement
+  xom_web_services.external_service:
+    class: Drupal\xom_web_services\ExternalService
     arguments: ['@xom_web_services.discord_helper', '@xom_web_services.feed_helper', '@xom_web_services.appcast_helper']
   xom_web_services.discord_helper:
     class: Drupal\xom_web_services\Socials\DiscordHelper

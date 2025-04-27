@@ -4,13 +4,9 @@ namespace Drupal\xom_web_services\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Messenger\MessengerInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Site\Settings;
 use Drupal\file\Entity\File;
-use Drupal\Core\File\FileSystem;
-use Drupal\quant\Plugin\QueueItem\RouteItem;
 use Drupal\Core\Archiver\Zip;
-use Drupal\Core\Archiver\ArchiverException;
 
 class SparkleForm extends FormBase {
 
@@ -25,7 +21,7 @@ class SparkleForm extends FormBase {
             '#title' => $this->t('App Updates'),
             '#type' => 'fieldset',
         ];
-        
+
         $form['sparkle']['appcast'] = [
             '#type' => 'managed_file',
             '#title' => $this->t('AppCast XML file'),
@@ -75,11 +71,11 @@ class SparkleForm extends FormBase {
      * 2) If the file is a ZIP, extract only relevant content (ignoring _MACOSX directories).
      * 3) Copy all files into the relevant public folder (either update_data or seventh_dawn).
      * 4) Clean up the staging folder.
-     * 
+     *
      * There is some duplicated code in here which should be cleaned up, but for now everything is stable.
      */
     public function submitForm(array &$form, FormStateInterface $form_state) {
-        
+
         $batch = [
             'title' => $this->t('Casting'),
             'operations' => [],
@@ -87,17 +83,17 @@ class SparkleForm extends FormBase {
             'progress_message' => t('@estimate.'),
             'error_message' => t('XXX Interrupted'),
         ];
-        
+
         $appcast = $form_state->getValue('appcast', 0);
         $package = $form_state->getValue('update', 0);
-        
+
         if (isset($appcast[0]) && !empty($appcast[0])) {
             $appcast_file = File::load($appcast[0]);
             $source = 'private://release_manager_staging/' . $appcast_file->getFilename();
             $destination = 'public://update_data/xivonmac_appcast.xml';
             $batch['operations'][] = [['\Drupal\xom_web_services\Form\SparkleForm', 'copyFile'], [$source, $destination]];
             $batch['operations'][] = [['\Drupal\xom_web_services\Form\SparkleForm', 'clean'], [$appcast_file]];
-        }  
+        }
 
         if (isset($package[0]) && !empty($package[0])) {
             $package_file = File::load($package[0]);
@@ -125,6 +121,8 @@ class SparkleForm extends FormBase {
         if ($form_state->getValue('social_post') == TRUE) {
             $batch['operations'][] = [['\Drupal\xom_web_services\Form\SparkleForm', 'postAppcastToDiscord'], []];
         }
+
+        $batch['operations'][] = [['\Drupal\xom_web_services\Form\SparkleForm', 'invalidateCache'], []];
 
         if (empty($batch['operations'])) {
             \Drupal::service('messenger')->addMessage('Nothing to do!');
@@ -154,8 +152,15 @@ class SparkleForm extends FormBase {
     }
 
     public static function postAppcastToDiscord() {
-        \Drupal::service('xom_web_services.social_announcement')->postAppcastToDiscord();
-        \Drupal::service('xom_web_services.social_announcement')->postAppcastToFeed();
+        \Drupal::service('xom_web_services.external_service')->postAppcastToDiscord();
+        \Drupal::service('xom_web_services.external_service')->postAppcastToFeed();
+    }
+
+    public static function invalidateCache() {
+      \Drupal::service('xom_web_services.external_service')->invalidateCdnCache(
+        Settings::get('xom_web_services.software_update_dist_id'),
+        '/sites/default/files/update_data/xivonmac_appcast.xml'
+      );
     }
 
 }
