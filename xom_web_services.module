@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Hook implementations for the XIV on Mac Web Services module.
+ */
+
+use Drupal\Core\Asset\AttachedAssetsInterface;
+use Drupal\Core\Language\LanguageInterface;
+
+/**
+ * Implements hook_css_alter().
+ *
+ * CivicTheme compiles its default (teal) colour palette into
+ * dist/civictheme.css as an `html { --ct-color-*: ... }` block. That palette is
+ * intended to be overridden by the dynamically generated css-variables
+ * stylesheet that CivicTheme builds from the theme's colour configuration (the
+ * XoM black/red brand palette).
+ *
+ * Under Drupal 10.6's asset ordering the generated stylesheet
+ * (public://css-variables.<theme>.css) resolves to weight 200 while
+ * dist/civictheme.css resolves to a fractionally higher weight (~200.00003) in
+ * the same group. The generated file therefore loads *before* civictheme.css
+ * and loses the cascade, so the front end renders with CivicTheme's default
+ * teal palette instead of the configured brand colours.
+ *
+ * Bump the generated stylesheet's weight so it always loads last and wins.
+ */
+function xom_web_services_css_alter(&$css, AttachedAssetsInterface $assets, LanguageInterface $language) {
+  foreach ($css as &$item) {
+    if (!empty($item['data']) && is_string($item['data']) && str_contains($item['data'], 'css-variables.')) {
+      $item['weight'] = 1000;
+    }
+  }
+}
