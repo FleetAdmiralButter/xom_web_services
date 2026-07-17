@@ -26,20 +26,22 @@ class FeedHelper {
     public function templateChangelogEntries($changelogEntries) {
         $result = "";
         foreach ($changelogEntries as $changelogEntry) {
-            $result .= '• ' . $changelogEntry . "<br>";
+            $result .= "\t<li>" . $changelogEntry . "</li>\n";
         }
         return $result;
     }
 
     public function templateMessage($version, $description, $date) {
+        // Per-release markup styled by fom_core's subtle-flair.css (see the
+        // "Changelog format" section in the site repo's CLAUDE.md). Must stay
+        // within basic_html's allowed tags.
         return <<<EOT
-        <strong>$date:</strong><br><br>
+        <h3>$date:</h3>
+        <p>XIV on Mac $version Beta</p>
+        <ul>
+        $description</ul>
 
-        XIV on Mac $version Beta<br>
 
-        $description
-
-        --- <br>
         EOT;
     }
 }
